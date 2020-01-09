@@ -55,6 +55,7 @@ class TextInput:
 
         # Text-surface will be created during the first update call:
         self.surface = pygame.Surface((1, 1))
+
         self.surface.set_alpha(0)
 
         # Vars to make keydowns repeat after user pressed a key for some time:
@@ -73,6 +74,7 @@ class TextInput:
         self.clock = pygame.time.Clock()
 
     def update(self, events):
+
         for event in events:
             if event.type == pygame.KEYDOWN:
                 self.cursor_visible = True  # So the user sees where he writes
@@ -83,12 +85,17 @@ class TextInput:
 
                 if event.key == pl.K_BACKSPACE:
                     self.input_string = (
-                        self.input_string[:max(self.cursor_position - 1, 0)]
+                        # changed second param from 0 to 1 so input_string can't be erased
+                        self.input_string[:max(self.cursor_position - 1, 1)]
                         + self.input_string[self.cursor_position:]
                     )
 
-                    # Subtract one from cursor_pos, but do not go below zero:
-                    self.cursor_position = max(self.cursor_position - 1, 0)
+                    # Subtract one from cursor_pos, but do not go below zero (or two if there was an input string):
+                    # added if check and changed second param from 0 to 1 so input string can't be user deleted
+                    if self.input_string != "":
+                        self.cursor_position = max(self.cursor_position - 1, 1)
+                    else:
+                        self.cursor_position = max(self.cursor_position - 1, 0)
                 elif event.key == pl.K_DELETE:
                     self.input_string = (
                         self.input_string[:self.cursor_position]
@@ -158,6 +165,17 @@ class TextInput:
 
         self.clock.tick()
         return False
+
+    def force_render(self):
+        """
+        Class doesn't render text until some events have been processed - for computer responses, we want to render
+        text directly after user has pressed return. This is what force render is for.
+        """
+        # Re-render text surface:
+        self.surface = self.font_object.render(self.input_string, self.antialias, self.text_color)
+
+    def get_line_height(self):
+        return self.font_object.get_height()
 
     def get_surface(self):
         return self.surface
